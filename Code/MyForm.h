@@ -870,7 +870,7 @@ namespace $safeprojectname$
 		{
 			int FileSignature = -1;
 			ParsedData data = parseString(inMessage);
-			if (data.message == "" || data.signature == "")
+			if ( data.signature == "")
 			{
 				MessageBox::Show("Ошибка в файле для проверки. Не удалось найти подпись или сообщение!");
 				return;
