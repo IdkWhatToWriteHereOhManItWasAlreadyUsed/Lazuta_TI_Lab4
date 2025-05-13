@@ -23,37 +23,31 @@ struct ParsedData {
 	}
 };
 
-ParsedData parseString(const std::string& input)
-{
+ParsedData parseString(const std::string& input) {
 	ParsedData data;
 
-	// Находим первое вхождение кавычки
-	size_t firstQuote = input.find('"');
-	if (firstQuote == std::string::npos) return ParsedData();
+	// Находим конец первой строки (число)
+	size_t endOfFirstLine = input.find('\n');
+	if (endOfFirstLine == std::string::npos) {
+		data.signature = input;
+		data.message = "";
+		return data; // Нет перевода строки — некорректный формат
+	}
 
-	// Находим закрывающую кавычку для сообщения
-	size_t messageEnd = input.find('"', firstQuote + 1);
-	if (messageEnd == std::string::npos) return ParsedData();
+	// Извлекаем число (первая строка до '\n')
+	data.signature = input.substr(0, endOfFirstLine);
 
-	// Извлекаем сообщение (без кавычек)
-	data.message = input.substr(firstQuote + 1, messageEnd - firstQuote - 1);
-
-	// Находим запятую после сообщения
-	size_t commaPos = input.find(',', messageEnd + 1);
-	if (commaPos == std::string::npos) return ParsedData();
-
-	// Находим кавычки для подписи
-	size_t signatureStart = input.find('"', commaPos + 1);
-	if (signatureStart == std::string::npos) return ParsedData();
-
-	size_t signatureEnd = input.find('"', signatureStart + 1);
-	if (signatureEnd == std::string::npos) return ParsedData();
-
-	// Извлекаем подпись (без кавычек)
-	data.signature = input.substr(signatureStart + 1, signatureEnd - signatureStart - 1);
+	// Остальной текст — сообщение (начиная со следующей строки)
+	if (endOfFirstLine + 1 < input.size()) {
+		data.message = input.substr(endOfFirstLine + 1);
+	}
+	else {
+		data.message = ""; // Если после числа пусто
+	}
 
 	return data;
 }
+
 namespace $safeprojectname$ 
 {
 	using namespace System;
@@ -814,6 +808,7 @@ namespace $safeprojectname$
 				SEncryptionTextBox->Text = S.ToString();
 				outMessage = "{\nMessage: \"" + inMessage + "\", Signature: \"" + std::to_string(S) + "\"\n}";
 				MessageBox::Show(ConvertString(outMessage));
+				outMessage = std::to_string(S) + "\n" + inMessage;
 			}
 		}
 
@@ -844,14 +839,14 @@ namespace $safeprojectname$
 				}
 				file.close();
 
-				std::string result = std::string("\n");
+				std::string result = "";
 				for (const auto& current : lines) {
 					result += current + "\n";
 				}
+				result.resize(result.size() - 1);
 
 				String^ text = msclr::interop::marshal_as<String^>(result);
 				MessageTextBox->Text = text;
-				result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
 				inMessage = result;
 			}
 			catch (...)
