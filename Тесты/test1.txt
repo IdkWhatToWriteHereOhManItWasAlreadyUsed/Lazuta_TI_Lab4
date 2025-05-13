@@ -1,3 +1,1 @@
-{
-Message: "BSUIR", Signature: "149"
-}
+BSUIR
