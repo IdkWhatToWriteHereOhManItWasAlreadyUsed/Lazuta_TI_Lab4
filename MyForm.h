@@ -1,16 +1,47 @@
 ﻿#pragma once
+
 #include <string>
+#include <sstream>
 #include <fstream>
 #include <msclr/marshal_cppstd.h>
 #include "Math.h"
 #include <numeric>
 
-typedef struct RSAData
+struct RSAData
 {
 	int e = 0;
 	int r = 0;
 	int d = 0;
 };
+
+struct ParsedData {
+	std::string message;
+	std::string signature;
+};
+
+ParsedData parseString(const std::string& input) 
+{
+	ParsedData data;
+	// Find the positions of the message and signature
+	size_t messageStart = input.find("\"");
+	size_t messageEnd = input.find("\"", messageStart);
+	size_t signatureStart = input.find("\"", messageEnd);
+	size_t signatureEnd = input.find("\"", signatureStart);
+
+	// Extract the message and signature
+	if (messageStart != std::string::npos && messageEnd != std::string::npos) {
+		data.message = input.substr(messageStart, messageEnd - messageStart);
+	}
+	else
+		return ParsedData("", "");
+	if (signatureStart != std::string::npos && signatureEnd != std::string::npos) {
+		data.signature = input.substr(signatureStart, signatureEnd - signatureStart);
+	}
+	else
+		return ParsedData("", "");
+
+	return data;
+}
 
 namespace $safeprojectname$ 
 {
@@ -21,8 +52,8 @@ namespace $safeprojectname$
 	using namespace System::Data;
 	using namespace System::Drawing;
 
-	std::vector<uint8_t> inMessage;
-	std::vector<uint8_t> outMessage;
+	std::string inMessage;
+	std::string outMessage;
 
 	public ref class MyForm : public System::Windows::Forms::Form
 	{
@@ -103,8 +134,8 @@ namespace $safeprojectname$
 		private: System::Windows::Forms::Button^ SignButton;
 		private: System::Windows::Forms::Button^ CheckButton;
 		private: System::Windows::Forms::ComboBox^ EComboBox;
-	private: System::Windows::Forms::ProgressBar^ progressBar1;
-	private: System::Windows::Forms::ProgressBar^ progressBar2;
+
+
 
 
 		protected:
@@ -158,8 +189,6 @@ namespace $safeprojectname$
 			this->label16 = (gcnew System::Windows::Forms::Label());
 			this->SignButton = (gcnew System::Windows::Forms::Button());
 			this->CheckButton = (gcnew System::Windows::Forms::Button());
-			this->progressBar1 = (gcnew System::Windows::Forms::ProgressBar());
-			this->progressBar2 = (gcnew System::Windows::Forms::ProgressBar());
 			this->menuStrip1->SuspendLayout();
 			this->panel1->SuspendLayout();
 			this->panel2->SuspendLayout();
@@ -172,12 +201,12 @@ namespace $safeprojectname$
 			// 
 			this->label1->AutoSize = true;
 			this->label1->BackColor = System::Drawing::Color::Black;
-			this->label1->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 14.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+			this->label1->Font = (gcnew System::Drawing::Font(L"Microsoft YaHei", 14.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(204)));
 			this->label1->ForeColor = System::Drawing::Color::SkyBlue;
-			this->label1->Location = System::Drawing::Point(4, 47);
+			this->label1->Location = System::Drawing::Point(5, 46);
 			this->label1->Name = L"label1";
-			this->label1->Size = System::Drawing::Size(1059, 24);
+			this->label1->Size = System::Drawing::Size(1070, 26);
 			this->label1->TabIndex = 0;
 			this->label1->Text = L"Вычисление и проверка электронной цифровой подписи (ЭЦП) текстового файла на базе"
 				L" алгоритма RSA";
@@ -190,7 +219,7 @@ namespace $safeprojectname$
 			});
 			this->menuStrip1->Location = System::Drawing::Point(0, 0);
 			this->menuStrip1->Name = L"menuStrip1";
-			this->menuStrip1->Size = System::Drawing::Size(1075, 24);
+			this->menuStrip1->Size = System::Drawing::Size(1081, 24);
 			this->menuStrip1->TabIndex = 1;
 			this->menuStrip1->Text = L"menuStrip1";
 			// 
@@ -207,15 +236,16 @@ namespace $safeprojectname$
 			// открытьToolStripMenuItem
 			// 
 			this->открытьToolStripMenuItem->Name = L"открытьToolStripMenuItem";
-			this->открытьToolStripMenuItem->Size = System::Drawing::Size(133, 22);
+			this->открытьToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->открытьToolStripMenuItem->Text = L"Открыть";
 			this->открытьToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::открытьToolStripMenuItem_Click);
 			// 
 			// сохранитьToolStripMenuItem
 			// 
 			this->сохранитьToolStripMenuItem->Name = L"сохранитьToolStripMenuItem";
-			this->сохранитьToolStripMenuItem->Size = System::Drawing::Size(133, 22);
+			this->сохранитьToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->сохранитьToolStripMenuItem->Text = L"Сохранить";
+			this->сохранитьToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::сохранитьToolStripMenuItem_Click);
 			// 
 			// оРазработчикеToolStripMenuItem
 			// 
@@ -634,21 +664,7 @@ namespace $safeprojectname$
 			this->CheckButton->TabIndex = 28;
 			this->CheckButton->Text = L"Проверить сообщение";
 			this->CheckButton->UseVisualStyleBackColor = false;
-			// 
-			// progressBar1
-			// 
-			this->progressBar1->ForeColor = System::Drawing::Color::Aqua;
-			this->progressBar1->Location = System::Drawing::Point(15, 641);
-			this->progressBar1->Name = L"progressBar1";
-			this->progressBar1->Size = System::Drawing::Size(1048, 23);
-			this->progressBar1->TabIndex = 29;
-			// 
-			// progressBar2
-			// 
-			this->progressBar2->Location = System::Drawing::Point(504, 650);
-			this->progressBar2->Name = L"progressBar2";
-			this->progressBar2->Size = System::Drawing::Size(8, 14);
-			this->progressBar2->TabIndex = 30;
+			this->CheckButton->Click += gcnew System::EventHandler(this, &MyForm::CheckButton_Click);
 			// 
 			// MyForm
 			// 
@@ -656,9 +672,7 @@ namespace $safeprojectname$
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(64)), static_cast<System::Int32>(static_cast<System::Byte>(64)),
 				static_cast<System::Int32>(static_cast<System::Byte>(64)));
-			this->ClientSize = System::Drawing::Size(1075, 685);
-			this->Controls->Add(this->progressBar2);
-			this->Controls->Add(this->progressBar1);
+			this->ClientSize = System::Drawing::Size(1081, 646);
 			this->Controls->Add(this->CheckButton);
 			this->Controls->Add(this->SignButton);
 			this->Controls->Add(this->panel4);
@@ -698,23 +712,13 @@ namespace $safeprojectname$
 		}
 #pragma endregion
 
-		System::String^ ConvertString(const std::string& str) {
-			return msclr::interop::marshal_as<System::String^>(str);
-		}
+		System::String^ ConvertString(const std::string& str) {return msclr::interop::marshal_as<System::String^>(str);	}
 
-		std::string ConvertString(System::String^ str) {
-			return msclr::interop::marshal_as<std::string>(str);
-		}
+		std::string ConvertString(System::String^ str) {return msclr::interop::marshal_as<std::string>(str);	}
 
-		private: System::Void оРазработчикеToolStripMenuItem_Click(System::Object^ sender, System::EventArgs^ e)
-		{
-			MessageBox::Show("Лазута Д.А, гр.351004");
-		}
+		private: System::Void оРазработчикеToolStripMenuItem_Click(System::Object^ sender, System::EventArgs^ e){MessageBox::Show("Лазута Д.А, гр.351004");}
 
-		private: System::Void MyForm_Load(System::Object^ sender, System::EventArgs^ e)
-		{
-			//
-		}
+		private: System::Void MyForm_Load(System::Object^ sender, System::EventArgs^ e){}
 
 		int GetTextBoxValue(System::Windows::Forms::TextBox^ textBox)
 		{
@@ -725,12 +729,10 @@ namespace $safeprojectname$
 			}
 			catch (System::FormatException^)
 			{
-				// Если преобразование не удалось (некорректный формат)
 				return -1;
 			}
 			catch (System::OverflowException^)
 			{
-				// Если число слишком большое или маленькое для int
 				return -1;
 			}	
 		}
@@ -744,7 +746,6 @@ namespace $safeprojectname$
 
 		RSAData TryInitRSAData()
 		{
-			// ХЕШ ПУСТОГО ФАЙЛА!!!!!!!!!!!!
 			EComboBox->Items->Clear();
 			int p = GetTextBoxValue(PTextBox);
 			if (is_prime(p) && p >3)
@@ -792,7 +793,13 @@ namespace $safeprojectname$
 			RSAData rsaData = TryInitRSAData();
 			if (rsaData.d != 0)
 			{
-
+				int m = calcMessageHash(inMessage);
+				int S = calcSignature(m, rsaData.d, rsaData.r);
+				K0TextBox->Text = rsaData.e.ToString() + ", " + rsaData.r.ToString();
+				KcTextBox->Text = rsaData.d.ToString() + ", " + rsaData.r.ToString();
+				MEncryptionTextBox->Text = m.ToString();
+				SEncryptionTextBox->Text = S.ToString();
+				outMessage = "{\nMessage: \"" + inMessage + "\",\nSignature: " + std::to_string(S) + "\n}";
 			}
 		}
 
@@ -817,9 +824,9 @@ namespace $safeprojectname$
 				}
 
 				std::vector<std::string> lines;
-				std::string line;
-				while (std::getline(file, line)) {
-					lines.push_back(line);
+
+				while (std::getline(file, inMessage)) {
+					lines.push_back(inMessage);
 				}
 				file.close();
 
@@ -827,6 +834,99 @@ namespace $safeprojectname$
 				for (const auto& current : lines) {
 					result += current + "\n";
 				}
+
+				inMessage = result;
+
+				String^ text = msclr::interop::marshal_as<String^>(result);
+				MessageTextBox->Text = text;
+			}
+			catch (...)
+			{
+				inMessage.clear();
+				return;
+			}
+		}
+		return;
+	}
+	private: System::Void CheckButton_Click(System::Object^ sender, System::EventArgs^ e) 
+	{
+		RSAData rsaData = TryInitRSAData();
+		if (rsaData.d != 0)
+		{
+			int FileSignature = -1;
+			ParsedData data = parseString(inMessage);
+			if (data.message == "" || data.signature == "")
+			{
+				MessageBox::Show("Ошибка в файле для проверки. Не удалось найти подпись или сообщение!");
+				return;
+			}
+			try
+			{
+				FileSignature = std::stoi(data.signature);
+			}
+			catch (...)
+			{
+				FileSignature = -1;
+			}
+
+			if (FileSignature == -1)
+			{
+				MessageBox::Show("Некорректный формат подписи файла! Подпись должна быть целым положительным числом!");
+				return;
+			}
+
+			int m = calcMessageHash(data.message);
+			int CalculatedSignature = calcSignature(m, rsaData.d, rsaData.r);
+			K0TextBox->Text = rsaData.e.ToString() + ", " + rsaData.r.ToString();
+			KcTextBox->Text = rsaData.d.ToString() + ", " + rsaData.r.ToString();
+			MEncryptionTextBox->Text = m.ToString();
+			SEncryptionTextBox->Text = CalculatedSignature.ToString();
+			
+			std::string resultMessage = "";
+			if (CalculatedSignature == FileSignature)
+			{
+				MessageBox::Show("Подпись файла: " + FileSignature.ToString() + " Рассчитанная подпись: " + CalculatedSignature.ToString() + " Файл корректен!", "Success", MessageBoxButtons::OK, MessageBoxIcon::Information);
+			}
+			else
+			{
+				MessageBox::Show("Подпись файла: " + FileSignature.ToString() + " Рассчитанная подпись: " + CalculatedSignature.ToString() + " Файл был изменён или повреждён!", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			}
+		}
+	}
+	private: System::Void сохранитьToolStripMenuItem_Click(System::Object^ sender, System::EventArgs^ e) 
+	{
+		SaveFileDialog^ openFileDialog = gcnew SaveFileDialog();
+		openFileDialog->Title = "Выберите файл для чтения";
+		openFileDialog->Filter = "Все файлы (*.*)|*.*";
+		openFileDialog->RestoreDirectory = true;
+
+		if (openFileDialog->ShowDialog() == Windows::Forms::DialogResult::OK)
+		{
+			try
+			{
+				String^ filePath = openFileDialog->FileName;
+				std::string nativePath = msclr::interop::marshal_as<std::string>(filePath);
+
+				std::ifstream file(nativePath);
+				if (!file.is_open()) {
+					MessageBox::Show("Ошибка открытия файла", "Ошибка", MessageBoxButtons::OK, MessageBoxIcon::Error);
+					return;
+				}
+
+				std::vector<std::string> lines;
+
+				while (std::getline(file, inMessage)) {
+					lines.push_back(inMessage);
+				}
+				file.close();
+
+				std::string result = std::string("\n");
+				for (const auto& current : lines) {
+					result += current + "\n";
+				}
+
+				inMessage = result;
+
 				String^ text = msclr::interop::marshal_as<String^>(result);
 				MessageTextBox->Text = text;
 			}

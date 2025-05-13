@@ -1,41 +1,28 @@
-#pragma once
 #ifndef MATH_H
 #define MATH_H
 
+#include <iostream>
+#include <string>
 #include <vector>
-#include <cstdint>
 
-// Подсчет trailing zeros (количество младших нулевых битов)
-uint32_t ctz(uint32_t value);
+bool is_prime(int n);
 
-// Подсчет leading zeros (количество старших нулевых битов)
-uint32_t clz(uint32_t value);
+// Function to calculate the greatest common divisor (GCD)
+int gcd(int a, int b);
 
-// Проверка на простоту (тест Миллера-Рабина)
-bool is_prime(int n, int k = 5);
-
-// Получение списка простых делителей числа
-std::vector<int> prime_factors(int n);
-
-// Быстрое возведение в степень по модулю
-int pow_mod(long long a, long long b, long long mod);
-
-// Проверка, является ли число первообразным корнем
-bool is_primitive_root(int g, int p, const std::vector<int>& factors);
-
-// Поиск всех первообразных корней по простому модулю p
-std::vector<int> find_primitive_roots(int p);
-
-// Альтернативная реализация возведения в степень по модулю
-int exp_module(int G, int X, int P);
-
-// Генерация случайного простого числа в диапазоне [min, max]
-int getRandomPrime(int min, int max);
-
-// нахождение открытых экспонент
+// Function to calculate open exponents
 std::vector<int> calcOpenExps(int f);
 
-// нахождение закрытой экспоненты
+// Function to calculate closed exponent
 int calcClosedExp(int e, int f);
+
+// Function to perform modular exponentiation
+int pow_mod(int a, int b, int mod);
+
+// Function to compute the hash of a string
+int calcMessageHash(const std::string& message, int p = 17, int q = 19, int H0 = 100);
+
+// Function to calculate the digital signature
+int calcSignature(int m, int d, int r);
 
 #endif // MATH_H
