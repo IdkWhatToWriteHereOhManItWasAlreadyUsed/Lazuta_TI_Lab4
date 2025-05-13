@@ -53,9 +53,9 @@ bool is_prime(int n)
 }
 
 // вычисление хеша строки
-int calcMessageHash(const std::string& message, int p = 17, int q = 19, int H0 = 100 /* произвольное начальное значние! */)
+int calcMessageHash(const std::string& message, int p = 17, int H0 = 100 /* произвольное начальное значние! */)
 {
-    int n = p * q;
+    int n = p;
     int Hi = H0;
 
     for (char c : message)

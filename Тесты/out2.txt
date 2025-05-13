@@ -1,3 +1,0 @@
-{
-Message: "London is the capital of Great Britain", Signature: "5744"
-}

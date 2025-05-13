@@ -20,7 +20,7 @@ int calcClosedExp(int e, int f);
 int pow_mod(int a, int b, int mod);
 
 // Function to compute the hash of a string
-int calcMessageHash(const std::string& message, int p = 17, int q = 19, int H0 = 100);
+int calcMessageHash(const std::string& message, int p = 17, int H0 = 100);
 
 // Function to calculate the digital signature
 int calcSignature(int m, int d, int r);

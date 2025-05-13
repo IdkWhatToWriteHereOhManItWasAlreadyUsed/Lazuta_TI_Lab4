@@ -806,7 +806,7 @@ namespace $safeprojectname$
 			RSAData rsaData = TryInitRSAData();
 			if (rsaData.d != 0)
 			{
-				int m = calcMessageHash(inMessage);
+				int m = calcMessageHash(inMessage, rsaData.r);
 				int S = calcSignature(m, rsaData.d, rsaData.r);
 				K0TextBox->Text = rsaData.e.ToString() + ", " + rsaData.r.ToString();
 				KcTextBox->Text = rsaData.d.ToString() + ", " + rsaData.r.ToString();
@@ -890,7 +890,7 @@ namespace $safeprojectname$
 				return;
 			}
 
-			int MessageHash = calcMessageHash(data.message);
+			int MessageHash = calcMessageHash(data.message , rsaData.r);
 			int CalculatedHash = pow_mod(FileSignature, rsaData.e, rsaData.r);
 			K0TextBox->Text = rsaData.e.ToString() + ", " + rsaData.r.ToString();
 			KcTextBox->Text = rsaData.d.ToString() + ", " + rsaData.r.ToString();
