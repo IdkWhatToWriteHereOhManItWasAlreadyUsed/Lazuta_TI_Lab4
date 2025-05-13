@@ -60,7 +60,8 @@ int calcMessageHash(const std::string& message, int p = 17, int q = 19, int H0 =
 
     for (char c : message)
     {
-        int Mi = static_cast<unsigned char>(c - 96);
+        // тут мб отнять 96 понадобится ну посмотрим кароч
+        int Mi = static_cast<unsigned char>(c);
         Hi = ((Hi + Mi) * (Hi + Mi)) % n;
     }
 

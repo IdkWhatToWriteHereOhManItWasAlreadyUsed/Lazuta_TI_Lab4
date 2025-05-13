@@ -4,8 +4,9 @@
 #include <sstream>
 #include <fstream>
 #include <msclr/marshal_cppstd.h>
-#include "Math.h"
+#include <algorithm>
 #include <numeric>
+#include "Math.h"
 
 struct RSAData
 {
@@ -17,32 +18,42 @@ struct RSAData
 struct ParsedData {
 	std::string message;
 	std::string signature;
+	ParsedData(const std::string& msg = "", const std::string& sig = "")
+		: message(msg), signature(sig) {
+	}
 };
 
-ParsedData parseString(const std::string& input) 
+ParsedData parseString(const std::string& input)
 {
 	ParsedData data;
-	// Find the positions of the message and signature
-	size_t messageStart = input.find("\"");
-	size_t messageEnd = input.find("\"", messageStart);
-	size_t signatureStart = input.find("\"", messageEnd);
-	size_t signatureEnd = input.find("\"", signatureStart);
 
-	// Extract the message and signature
-	if (messageStart != std::string::npos && messageEnd != std::string::npos) {
-		data.message = input.substr(messageStart, messageEnd - messageStart);
-	}
-	else
-		return ParsedData("", "");
-	if (signatureStart != std::string::npos && signatureEnd != std::string::npos) {
-		data.signature = input.substr(signatureStart, signatureEnd - signatureStart);
-	}
-	else
-		return ParsedData("", "");
+	// Находим первое вхождение кавычки
+	size_t firstQuote = input.find('"');
+	if (firstQuote == std::string::npos) return ParsedData();
+
+	// Находим закрывающую кавычку для сообщения
+	size_t messageEnd = input.find('"', firstQuote + 1);
+	if (messageEnd == std::string::npos) return ParsedData();
+
+	// Извлекаем сообщение (без кавычек)
+	data.message = input.substr(firstQuote + 1, messageEnd - firstQuote - 1);
+
+	// Находим запятую после сообщения
+	size_t commaPos = input.find(',', messageEnd + 1);
+	if (commaPos == std::string::npos) return ParsedData();
+
+	// Находим кавычки для подписи
+	size_t signatureStart = input.find('"', commaPos + 1);
+	if (signatureStart == std::string::npos) return ParsedData();
+
+	size_t signatureEnd = input.find('"', signatureStart + 1);
+	if (signatureEnd == std::string::npos) return ParsedData();
+
+	// Извлекаем подпись (без кавычек)
+	data.signature = input.substr(signatureStart + 1, signatureEnd - signatureStart - 1);
 
 	return data;
 }
-
 namespace $safeprojectname$ 
 {
 	using namespace System;
@@ -236,14 +247,14 @@ namespace $safeprojectname$
 			// открытьToolStripMenuItem
 			// 
 			this->открытьToolStripMenuItem->Name = L"открытьToolStripMenuItem";
-			this->открытьToolStripMenuItem->Size = System::Drawing::Size(180, 22);
+			this->открытьToolStripMenuItem->Size = System::Drawing::Size(133, 22);
 			this->открытьToolStripMenuItem->Text = L"Открыть";
 			this->открытьToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::открытьToolStripMenuItem_Click);
 			// 
 			// сохранитьToolStripMenuItem
 			// 
 			this->сохранитьToolStripMenuItem->Name = L"сохранитьToolStripMenuItem";
-			this->сохранитьToolStripMenuItem->Size = System::Drawing::Size(180, 22);
+			this->сохранитьToolStripMenuItem->Size = System::Drawing::Size(133, 22);
 			this->сохранитьToolStripMenuItem->Text = L"Сохранить";
 			this->сохранитьToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::сохранитьToolStripMenuItem_Click);
 			// 
@@ -272,6 +283,7 @@ namespace $safeprojectname$
 			this->QTextBox->Name = L"QTextBox";
 			this->QTextBox->Size = System::Drawing::Size(100, 20);
 			this->QTextBox->TabIndex = 4;
+			this->QTextBox->TextChanged += gcnew System::EventHandler(this, &MyForm::QTextBox_TextChanged);
 			// 
 			// label3
 			// 
@@ -303,6 +315,7 @@ namespace $safeprojectname$
 			this->PTextBox->Name = L"PTextBox";
 			this->PTextBox->Size = System::Drawing::Size(100, 20);
 			this->PTextBox->TabIndex = 7;
+			this->PTextBox->TextChanged += gcnew System::EventHandler(this, &MyForm::PTextBox_TextChanged);
 			// 
 			// label5
 			// 
@@ -760,9 +773,9 @@ namespace $safeprojectname$
 					{
 						EComboBox->Items->Add(exp);
 					}
-					if (EComboBox->SelectedItem)
+					if (EComboBox->Text != "")
 					{
-						int e = std::stoi(ConvertString(EComboBox->SelectedItem->ToString()));
+						int e = std::stoi(ConvertString(EComboBox->Text));
 						int d = calcClosedExp(e, f);
 						SetTextBoxesTexts(r, d, f);
 						return RSAData(e, r, d);
@@ -799,7 +812,8 @@ namespace $safeprojectname$
 				KcTextBox->Text = rsaData.d.ToString() + ", " + rsaData.r.ToString();
 				MEncryptionTextBox->Text = m.ToString();
 				SEncryptionTextBox->Text = S.ToString();
-				outMessage = "{\nMessage: \"" + inMessage + "\",\nSignature: " + std::to_string(S) + "\n}";
+				outMessage = "{\nMessage: \"" + inMessage + "\", Signature: \"" + std::to_string(S) + "\"\n}";
+				MessageBox::Show(ConvertString(outMessage));
 			}
 		}
 
@@ -835,10 +849,10 @@ namespace $safeprojectname$
 					result += current + "\n";
 				}
 
-				inMessage = result;
-
 				String^ text = msclr::interop::marshal_as<String^>(result);
 				MessageTextBox->Text = text;
+				result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
+				inMessage = result;
 			}
 			catch (...)
 			{
@@ -850,6 +864,7 @@ namespace $safeprojectname$
 	}
 	private: System::Void CheckButton_Click(System::Object^ sender, System::EventArgs^ e) 
 	{
+		outMessage = "";
 		RSAData rsaData = TryInitRSAData();
 		if (rsaData.d != 0)
 		{
@@ -875,69 +890,87 @@ namespace $safeprojectname$
 				return;
 			}
 
-			int m = calcMessageHash(data.message);
-			int CalculatedSignature = calcSignature(m, rsaData.d, rsaData.r);
+			int MessageHash = calcMessageHash(data.message);
+			int CalculatedHash = pow_mod(FileSignature, rsaData.e, rsaData.r);
 			K0TextBox->Text = rsaData.e.ToString() + ", " + rsaData.r.ToString();
 			KcTextBox->Text = rsaData.d.ToString() + ", " + rsaData.r.ToString();
-			MEncryptionTextBox->Text = m.ToString();
-			SEncryptionTextBox->Text = CalculatedSignature.ToString();
+			MDecryptionTextBox->Text = MessageHash.ToString();
+			SDecryptionTextBox->Text = FileSignature.ToString();
+			MHashResultTextBox->Text = CalculatedHash.ToString();
 			
 			std::string resultMessage = "";
-			if (CalculatedSignature == FileSignature)
+			if (CalculatedHash == MessageHash)
 			{
-				MessageBox::Show("Подпись файла: " + FileSignature.ToString() + " Рассчитанная подпись: " + CalculatedSignature.ToString() + " Файл корректен!", "Success", MessageBoxButtons::OK, MessageBoxIcon::Information);
+				MessageBox::Show("Хеш файла: " + MessageHash.ToString() + " Рассчитанный хеш: " + CalculatedHash.ToString() + " Файл корректен!", "Success", MessageBoxButtons::OK, MessageBoxIcon::Information);
 			}
 			else
 			{
-				MessageBox::Show("Подпись файла: " + FileSignature.ToString() + " Рассчитанная подпись: " + CalculatedSignature.ToString() + " Файл был изменён или повреждён!", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+				MessageBox::Show("Хеш файла: " + MessageHash.ToString() + " Рассчитанный хеш: " + CalculatedHash.ToString() + " Файл был изменён или повреждён!", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			}
 		}
 	}
 	private: System::Void сохранитьToolStripMenuItem_Click(System::Object^ sender, System::EventArgs^ e) 
 	{
-		SaveFileDialog^ openFileDialog = gcnew SaveFileDialog();
-		openFileDialog->Title = "Выберите файл для чтения";
-		openFileDialog->Filter = "Все файлы (*.*)|*.*";
-		openFileDialog->RestoreDirectory = true;
+		SaveFileDialog^ saveToFileDialog = gcnew SaveFileDialog();
+		saveToFileDialog->Title = "Выберите файл для чтения";
+		saveToFileDialog->Filter = "Все файлы (*.*)|*.*";
+		saveToFileDialog->RestoreDirectory = true;
 
-		if (openFileDialog->ShowDialog() == Windows::Forms::DialogResult::OK)
+		if (saveToFileDialog->ShowDialog() == Windows::Forms::DialogResult::OK)
 		{
 			try
 			{
-				String^ filePath = openFileDialog->FileName;
+				String^ filePath = saveToFileDialog->FileName;
 				std::string nativePath = msclr::interop::marshal_as<std::string>(filePath);
 
-				std::ifstream file(nativePath);
-				if (!file.is_open()) {
-					MessageBox::Show("Ошибка открытия файла", "Ошибка", MessageBoxButtons::OK, MessageBoxIcon::Error);
-					return;
+				std::ofstream outFile(nativePath);
+
+				if (outFile.is_open()) {
+					outFile << outMessage; 
+					outFile.close(); 
 				}
-
-				std::vector<std::string> lines;
-
-				while (std::getline(file, inMessage)) {
-					lines.push_back(inMessage);
+				else {
+					MessageBox::Show("Не удалось открыть файл для записи.");
 				}
-				file.close();
-
-				std::string result = std::string("\n");
-				for (const auto& current : lines) {
-					result += current + "\n";
-				}
-
-				inMessage = result;
-
-				String^ text = msclr::interop::marshal_as<String^>(result);
-				MessageTextBox->Text = text;
+				outFile.close();
 			}
 			catch (...)
 			{
-				inMessage.clear();
 				return;
 			}
 		}
 		return;
 	}
+
+	private: System::Void PTextBox_TextChanged(System::Object^ sender, System::EventArgs^ e) 
+	{
+		int p = GetTextBoxValue(PTextBox);
+		int q = GetTextBoxValue(QTextBox);
+		if (is_prime(p) && p > 3 && is_prime(q) && q > 3)
+		{
+			EComboBox->Items->Clear();
+			int f = (p - 1) * (q - 1);
+			std::vector<int> exps = calcOpenExps(f);
+			for (int exp : exps)
+			{
+				EComboBox->Items->Add(exp);
+			}
+		}
+	}
+private: System::Void QTextBox_TextChanged(System::Object^ sender, System::EventArgs^ e) {
+	int p = GetTextBoxValue(PTextBox);
+	int q = GetTextBoxValue(QTextBox);
+	if (is_prime(p) && p > 3 && is_prime(q) && q > 3)
+	{
+		EComboBox->Items->Clear();
+		int f = (p - 1) * (q - 1);
+		std::vector<int> exps = calcOpenExps(f);
+		for (int exp : exps)
+		{
+			EComboBox->Items->Add(exp);
+		}
+	}
+}
 };
 
 }
