@@ -1,5 +1,17 @@
 ﻿#pragma once
 #include <string>
+#include <fstream>
+#include <msclr/marshal_cppstd.h>
+#include "Math.h"
+#include <numeric>
+
+typedef struct RSAData
+{
+	int e = 0;
+	int r = 0;
+	int d = 0;
+};
+
 namespace $safeprojectname$ 
 {
 	using namespace System;
@@ -8,6 +20,9 @@ namespace $safeprojectname$
 	using namespace System::Windows::Forms;
 	using namespace System::Data;
 	using namespace System::Drawing;
+
+	std::vector<uint8_t> inMessage;
+	std::vector<uint8_t> outMessage;
 
 	public ref class MyForm : public System::Windows::Forms::Form
 	{
@@ -60,7 +75,8 @@ namespace $safeprojectname$
 
 
 		private: System::Windows::Forms::Panel^ panel3;
-		private: System::Windows::Forms::TextBox^ textBox9;
+	private: System::Windows::Forms::TextBox^ MessageTextBox;
+
 		private: System::Windows::Forms::Panel^ EncryptionPanel;
 		private: System::Windows::Forms::TextBox^ SEncryptionTextBox;
 
@@ -87,6 +103,8 @@ namespace $safeprojectname$
 		private: System::Windows::Forms::Button^ SignButton;
 		private: System::Windows::Forms::Button^ CheckButton;
 		private: System::Windows::Forms::ComboBox^ EComboBox;
+	private: System::Windows::Forms::ProgressBar^ progressBar1;
+	private: System::Windows::Forms::ProgressBar^ progressBar2;
 
 
 		protected:
@@ -117,12 +135,13 @@ namespace $safeprojectname$
 			this->DTextBox = (gcnew System::Windows::Forms::TextBox());
 			this->label8 = (gcnew System::Windows::Forms::Label());
 			this->panel2 = (gcnew System::Windows::Forms::Panel());
+			this->EComboBox = (gcnew System::Windows::Forms::ComboBox());
 			this->label9 = (gcnew System::Windows::Forms::Label());
 			this->label10 = (gcnew System::Windows::Forms::Label());
 			this->K0TextBox = (gcnew System::Windows::Forms::TextBox());
 			this->KcTextBox = (gcnew System::Windows::Forms::TextBox());
 			this->panel3 = (gcnew System::Windows::Forms::Panel());
-			this->textBox9 = (gcnew System::Windows::Forms::TextBox());
+			this->MessageTextBox = (gcnew System::Windows::Forms::TextBox());
 			this->EncryptionPanel = (gcnew System::Windows::Forms::Panel());
 			this->label13 = (gcnew System::Windows::Forms::Label());
 			this->SEncryptionTextBox = (gcnew System::Windows::Forms::TextBox());
@@ -139,7 +158,8 @@ namespace $safeprojectname$
 			this->label16 = (gcnew System::Windows::Forms::Label());
 			this->SignButton = (gcnew System::Windows::Forms::Button());
 			this->CheckButton = (gcnew System::Windows::Forms::Button());
-			this->EComboBox = (gcnew System::Windows::Forms::ComboBox());
+			this->progressBar1 = (gcnew System::Windows::Forms::ProgressBar());
+			this->progressBar2 = (gcnew System::Windows::Forms::ProgressBar());
 			this->menuStrip1->SuspendLayout();
 			this->panel1->SuspendLayout();
 			this->panel2->SuspendLayout();
@@ -189,6 +209,7 @@ namespace $safeprojectname$
 			this->открытьToolStripMenuItem->Name = L"открытьToolStripMenuItem";
 			this->открытьToolStripMenuItem->Size = System::Drawing::Size(133, 22);
 			this->открытьToolStripMenuItem->Text = L"Открыть";
+			this->открытьToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::открытьToolStripMenuItem_Click);
 			// 
 			// сохранитьToolStripMenuItem
 			// 
@@ -280,15 +301,17 @@ namespace $safeprojectname$
 			this->label6->ForeColor = System::Drawing::Color::SkyBlue;
 			this->label6->Location = System::Drawing::Point(70, 23);
 			this->label6->Name = L"label6";
-			this->label6->Size = System::Drawing::Size(318, 18);
+			this->label6->Size = System::Drawing::Size(273, 18);
 			this->label6->TabIndex = 10;
-			this->label6->Text = L"Функция Эйлера для r φ(r) = (p–1)*(q–1):";
+			this->label6->Text = L"Функция Эйлера φ(r) = (p–1)*(q–1):";
+			this->label6->Click += gcnew System::EventHandler(this, &MyForm::label6_Click);
 			// 
 			// FTextBox
 			// 
 			this->FTextBox->Location = System::Drawing::Point(391, 22);
 			this->FTextBox->MaxLength = 100;
 			this->FTextBox->Name = L"FTextBox";
+			this->FTextBox->ReadOnly = true;
 			this->FTextBox->Size = System::Drawing::Size(100, 20);
 			this->FTextBox->TabIndex = 11;
 			// 
@@ -324,6 +347,7 @@ namespace $safeprojectname$
 			this->DTextBox->Location = System::Drawing::Point(391, 118);
 			this->DTextBox->MaxLength = 100;
 			this->DTextBox->Name = L"DTextBox";
+			this->DTextBox->ReadOnly = true;
 			this->DTextBox->Size = System::Drawing::Size(100, 20);
 			this->DTextBox->TabIndex = 16;
 			// 
@@ -352,6 +376,14 @@ namespace $safeprojectname$
 			this->panel2->Name = L"panel2";
 			this->panel2->Size = System::Drawing::Size(508, 166);
 			this->panel2->TabIndex = 17;
+			// 
+			// EComboBox
+			// 
+			this->EComboBox->FormattingEnabled = true;
+			this->EComboBox->Location = System::Drawing::Point(391, 67);
+			this->EComboBox->Name = L"EComboBox";
+			this->EComboBox->Size = System::Drawing::Size(100, 21);
+			this->EComboBox->TabIndex = 17;
 			// 
 			// label9
 			// 
@@ -403,20 +435,21 @@ namespace $safeprojectname$
 			this->panel3->Size = System::Drawing::Size(514, 71);
 			this->panel3->TabIndex = 20;
 			// 
-			// textBox9
+			// MessageTextBox
 			// 
-			this->textBox9->BackColor = System::Drawing::SystemColors::ActiveCaptionText;
-			this->textBox9->BorderStyle = System::Windows::Forms::BorderStyle::None;
-			this->textBox9->Font = (gcnew System::Drawing::Font(L"Microsoft Uighur", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+			this->MessageTextBox->BackColor = System::Drawing::SystemColors::ActiveCaptionText;
+			this->MessageTextBox->BorderStyle = System::Windows::Forms::BorderStyle::None;
+			this->MessageTextBox->Font = (gcnew System::Drawing::Font(L"Microsoft Uighur", 20.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
-			this->textBox9->ForeColor = System::Drawing::SystemColors::Window;
-			this->textBox9->Location = System::Drawing::Point(15, 297);
-			this->textBox9->Multiline = true;
-			this->textBox9->Name = L"textBox9";
-			this->textBox9->ReadOnly = true;
-			this->textBox9->Size = System::Drawing::Size(514, 332);
-			this->textBox9->TabIndex = 21;
-			this->textBox9->TextAlign = System::Windows::Forms::HorizontalAlignment::Center;
+			this->MessageTextBox->ForeColor = System::Drawing::SystemColors::Window;
+			this->MessageTextBox->Location = System::Drawing::Point(15, 297);
+			this->MessageTextBox->Multiline = true;
+			this->MessageTextBox->Name = L"MessageTextBox";
+			this->MessageTextBox->ReadOnly = true;
+			this->MessageTextBox->ScrollBars = System::Windows::Forms::ScrollBars::Vertical;
+			this->MessageTextBox->Size = System::Drawing::Size(514, 332);
+			this->MessageTextBox->TabIndex = 21;
+			this->MessageTextBox->TextAlign = System::Windows::Forms::HorizontalAlignment::Center;
 			// 
 			// EncryptionPanel
 			// 
@@ -448,6 +481,7 @@ namespace $safeprojectname$
 			this->SEncryptionTextBox->Location = System::Drawing::Point(391, 53);
 			this->SEncryptionTextBox->MaxLength = 100;
 			this->SEncryptionTextBox->Name = L"SEncryptionTextBox";
+			this->SEncryptionTextBox->ReadOnly = true;
 			this->SEncryptionTextBox->Size = System::Drawing::Size(100, 20);
 			this->SEncryptionTextBox->TabIndex = 18;
 			// 
@@ -456,6 +490,7 @@ namespace $safeprojectname$
 			this->MEncryptionTextBox->Location = System::Drawing::Point(391, 15);
 			this->MEncryptionTextBox->MaxLength = 100;
 			this->MEncryptionTextBox->Name = L"MEncryptionTextBox";
+			this->MEncryptionTextBox->ReadOnly = true;
 			this->MEncryptionTextBox->Size = System::Drawing::Size(100, 20);
 			this->MEncryptionTextBox->TabIndex = 17;
 			// 
@@ -515,6 +550,7 @@ namespace $safeprojectname$
 			this->MHashResultTextBox->Location = System::Drawing::Point(391, 90);
 			this->MHashResultTextBox->MaxLength = 100;
 			this->MHashResultTextBox->Name = L"MHashResultTextBox";
+			this->MHashResultTextBox->ReadOnly = true;
 			this->MHashResultTextBox->Size = System::Drawing::Size(100, 20);
 			this->MHashResultTextBox->TabIndex = 25;
 			// 
@@ -535,6 +571,7 @@ namespace $safeprojectname$
 			this->SDecryptionTextBox->Location = System::Drawing::Point(391, 53);
 			this->SDecryptionTextBox->MaxLength = 100;
 			this->SDecryptionTextBox->Name = L"SDecryptionTextBox";
+			this->SDecryptionTextBox->ReadOnly = true;
 			this->SDecryptionTextBox->Size = System::Drawing::Size(100, 20);
 			this->SDecryptionTextBox->TabIndex = 18;
 			// 
@@ -543,6 +580,7 @@ namespace $safeprojectname$
 			this->MDecryptionTextBox->Location = System::Drawing::Point(391, 15);
 			this->MDecryptionTextBox->MaxLength = 100;
 			this->MDecryptionTextBox->Name = L"MDecryptionTextBox";
+			this->MDecryptionTextBox->ReadOnly = true;
 			this->MDecryptionTextBox->Size = System::Drawing::Size(100, 20);
 			this->MDecryptionTextBox->TabIndex = 17;
 			// 
@@ -582,6 +620,7 @@ namespace $safeprojectname$
 			this->SignButton->TabIndex = 27;
 			this->SignButton->Text = L"Подписать сообщение";
 			this->SignButton->UseVisualStyleBackColor = false;
+			this->SignButton->Click += gcnew System::EventHandler(this, &MyForm::SignButton_Click);
 			// 
 			// CheckButton
 			// 
@@ -596,13 +635,20 @@ namespace $safeprojectname$
 			this->CheckButton->Text = L"Проверить сообщение";
 			this->CheckButton->UseVisualStyleBackColor = false;
 			// 
-			// EComboBox
+			// progressBar1
 			// 
-			this->EComboBox->FormattingEnabled = true;
-			this->EComboBox->Location = System::Drawing::Point(391, 67);
-			this->EComboBox->Name = L"EComboBox";
-			this->EComboBox->Size = System::Drawing::Size(100, 21);
-			this->EComboBox->TabIndex = 17;
+			this->progressBar1->ForeColor = System::Drawing::Color::Aqua;
+			this->progressBar1->Location = System::Drawing::Point(15, 641);
+			this->progressBar1->Name = L"progressBar1";
+			this->progressBar1->Size = System::Drawing::Size(1048, 23);
+			this->progressBar1->TabIndex = 29;
+			// 
+			// progressBar2
+			// 
+			this->progressBar2->Location = System::Drawing::Point(504, 650);
+			this->progressBar2->Name = L"progressBar2";
+			this->progressBar2->Size = System::Drawing::Size(8, 14);
+			this->progressBar2->TabIndex = 30;
 			// 
 			// MyForm
 			// 
@@ -610,12 +656,14 @@ namespace $safeprojectname$
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(64)), static_cast<System::Int32>(static_cast<System::Byte>(64)),
 				static_cast<System::Int32>(static_cast<System::Byte>(64)));
-			this->ClientSize = System::Drawing::Size(1075, 657);
+			this->ClientSize = System::Drawing::Size(1075, 685);
+			this->Controls->Add(this->progressBar2);
+			this->Controls->Add(this->progressBar1);
 			this->Controls->Add(this->CheckButton);
 			this->Controls->Add(this->SignButton);
 			this->Controls->Add(this->panel4);
 			this->Controls->Add(this->EncryptionPanel);
-			this->Controls->Add(this->textBox9);
+			this->Controls->Add(this->MessageTextBox);
 			this->Controls->Add(this->panel3);
 			this->Controls->Add(this->panel2);
 			this->Controls->Add(this->panel1);
@@ -646,8 +694,17 @@ namespace $safeprojectname$
 			this->panel4->PerformLayout();
 			this->ResumeLayout(false);
 			this->PerformLayout();
+
 		}
 #pragma endregion
+
+		System::String^ ConvertString(const std::string& str) {
+			return msclr::interop::marshal_as<System::String^>(str);
+		}
+
+		std::string ConvertString(System::String^ str) {
+			return msclr::interop::marshal_as<std::string>(str);
+		}
 
 		private: System::Void оРазработчикеToolStripMenuItem_Click(System::Object^ sender, System::EventArgs^ e)
 		{
@@ -675,15 +732,113 @@ namespace $safeprojectname$
 			{
 				// Если число слишком большое или маленькое для int
 				return -1;
+			}	
+		}
+
+		void SetTextBoxesTexts(int r, int d, int f)
+		{
+			RTextBox->Text = r.ToString();
+			DTextBox->Text = d.ToString();
+			FTextBox->Text = f.ToString();
+		}
+
+		RSAData TryInitRSAData()
+		{
+			// ХЕШ ПУСТОГО ФАЙЛА!!!!!!!!!!!!
+			EComboBox->Items->Clear();
+			int p = GetTextBoxValue(PTextBox);
+			if (is_prime(p) && p >3)
+			{
+				int q = GetTextBoxValue(QTextBox);
+				if (is_prime(q) && q > 3)
+				{
+					int r = p * q;
+					int f = (p - 1) * (q - 1);
+					std::vector<int> exps = calcOpenExps(f);
+					for (int exp: exps)
+					{
+						EComboBox->Items->Add(exp);
+					}
+					if (EComboBox->SelectedItem)
+					{
+						int e = std::stoi(ConvertString(EComboBox->SelectedItem->ToString()));
+						int d = calcClosedExp(e, f);
+						SetTextBoxesTexts(r, d, f);
+						return RSAData(e, r, d);
+					}
+					else
+					{
+						MessageBox::Show("Не выбрана открытая экспонента е!");
+					}
+				}
+				else
+				{
+					MessageBox::Show("Q должно быть простым числом!");
+				}
+			}
+			else
+			{
+				MessageBox::Show("P должно быть простым числом!");
+			}
+			return RSAData();
+		}
+
+	private: System::Void label6_Click(System::Object^ sender, System::EventArgs^ e) 
+	{
+	}
+	private: 
+		System::Void SignButton_Click(System::Object^ sender, System::EventArgs^ e)
+		{
+			RSAData rsaData = TryInitRSAData();
+			if (rsaData.d != 0)
+			{
+
 			}
 		}
 
-		void TryInitRSAData()
+	private: System::Void открытьToolStripMenuItem_Click(System::Object^ sender, System::EventArgs^ e) 
+	{
+		OpenFileDialog^ openFileDialog = gcnew OpenFileDialog();
+		openFileDialog->Title = "Выберите файл для чтения";
+		openFileDialog->Filter = "Все файлы (*.*)|*.*";
+		openFileDialog->RestoreDirectory = true;
+
+		if (openFileDialog->ShowDialog() == Windows::Forms::DialogResult::OK)
 		{
-			int p = GetTextBoxValue(PTextBox);
-			
+			try
+			{
+				String^ filePath = openFileDialog->FileName;
+				std::string nativePath = msclr::interop::marshal_as<std::string>(filePath);
+
+				std::ifstream file(nativePath);
+				if (!file.is_open()) {
+					MessageBox::Show("Ошибка открытия файла", "Ошибка", MessageBoxButtons::OK, MessageBoxIcon::Error);
+					return;
+				}
+
+				std::vector<std::string> lines;
+				std::string line;
+				while (std::getline(file, line)) {
+					lines.push_back(line);
+				}
+				file.close();
+
+				std::string result = std::string("\n");
+				for (const auto& current : lines) {
+					result += current + "\n";
+				}
+				String^ text = msclr::interop::marshal_as<String^>(result);
+				MessageTextBox->Text = text;
+			}
+			catch (...)
+			{
+				inMessage.clear();
+				return;
+			}
 		}
-	};
+		return;
+	}
+};
 
 }
 

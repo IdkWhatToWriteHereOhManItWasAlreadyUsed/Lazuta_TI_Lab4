@@ -32,4 +32,10 @@ int exp_module(int G, int X, int P);
 // Генерация случайного простого числа в диапазоне [min, max]
 int getRandomPrime(int min, int max);
 
+// нахождение открытых экспонент
+std::vector<int> calcOpenExps(int f);
+
+// нахождение закрытой экспоненты
+int calcClosedExp(int e, int f);
+
 #endif // MATH_H

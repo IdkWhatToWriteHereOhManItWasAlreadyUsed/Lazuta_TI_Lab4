@@ -92,6 +92,8 @@ bool is_primitive_root(int g, int p, const vector<int>& factors) {
 
 bool is_prime(int n, int k = 5) 
 {
+    if (n < 1)
+        return false;
     if ((n & 1) == 0) return n == 2;
     if (n < 9) return n > 1; // 3, 5 è 7.
 
@@ -170,4 +172,22 @@ int getRandomPrime(int min, int max) {
             return candidate;
         }
     }
+}
+
+std::vector<int> calcOpenExps(int f)
+{
+    std::vector<int> exps;
+    for (int e = 2; e < f; e++)
+    {
+        if (gcd(e, f) == 1)
+            exps.push_back(e);
+    }
+    return exps;
+}
+
+int calcClosedExp(int e, int f)
+{
+    int d = 1;
+    while ((e * d++) % f != 1) {}
+    return d;
 }
