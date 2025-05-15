@@ -576,11 +576,12 @@ namespace $safeprojectname$
 			this->label17->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 11.25F, static_cast<System::Drawing::FontStyle>((System::Drawing::FontStyle::Bold | System::Drawing::FontStyle::Italic)),
 				System::Drawing::GraphicsUnit::Point, static_cast<System::Byte>(204)));
 			this->label17->ForeColor = System::Drawing::Color::SkyBlue;
-			this->label17->Location = System::Drawing::Point(17, 90);
+			this->label17->Location = System::Drawing::Point(51, 90);
 			this->label17->Name = L"label17";
-			this->label17->Size = System::Drawing::Size(371, 18);
+			this->label17->Size = System::Drawing::Size(334, 18);
 			this->label17->TabIndex = 26;
-			this->label17->Text = L"Результат хеширования m’ = h(М) сообщения:";
+			this->label17->Text = L"Хеш сообщения, полученный из подписи:";
+			this->label17->Click += gcnew System::EventHandler(this, &MyForm::label17_Click);
 			// 
 			// MHashResultTextBox
 			// 
@@ -965,6 +966,8 @@ private: System::Void QTextBox_TextChanged(System::Object^ sender, System::Event
 			EComboBox->Items->Add(exp);
 		}
 	}
+}
+private: System::Void label17_Click(System::Object^ sender, System::EventArgs^ e) {
 }
 };
 
